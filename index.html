@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Compliance Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0f1117;--bg2:#161820;--bg3:#1e2029;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#e8e9f0;--text2:#8b8d9e;--text3:#555768;
+  --accent:#4f7fff;--accent2:#3d6aff;
+  --green:#34d399;--amber:#fbbf24;--red:#f87171;--purple:#a78bfa;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+/* AUTH SCREENS */
+.auth-screen{min-height:100vh;display:none;align-items:center;justify-content:center;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,127,255,0.12) 0%,transparent 70%);}
+.auth-screen.active{display:flex;}
+.auth-card{width:400px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:20px;padding:40px 36px;}
+.auth-logo{font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:32px;}
+.auth-title{font-size:24px;font-weight:600;margin-bottom:6px;}
+.auth-sub{font-size:14px;color:var(--text2);margin-bottom:28px;line-height:1.5;}
+.auth-switch{font-size:13px;color:var(--text2);margin-top:20px;text-align:center;}
+.auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none;}
+.auth-switch a:hover{text-decoration:underline;}
+.input-group{margin-bottom:14px;}
+.input-group label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:6px;}
+.input-group input,.input-group select{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;}
+.input-group input:focus,.input-group select:focus{border-color:var(--accent);}
+.auth-btn{width:100%;padding:12px;background:var(--accent);border:none;border-radius:10px;font-size:14px;font-weight:600;color:#fff;cursor:pointer;margin-top:4px;transition:background .2s,transform .1s;}
+.auth-btn:hover{background:var(--accent2);}
+.auth-btn:active{transform:scale(.98);}
+.auth-btn:disabled{opacity:.5;cursor:not-allowed;}
+.auth-alert{padding:12px 14px;border-radius:10px;font-size:13px;margin-bottom:16px;display:none;}
+.auth-alert.error{background:rgba(248,113,113,0.1);border:0.5px solid rgba(248,113,113,0.3);color:var(--red);}
+.auth-alert.success{background:rgba(52,211,153,0.1);border:0.5px solid rgba(52,211,153,0.3);color:var(--green);}
+.codigo-hint{font-size:12px;color:var(--text3);margin-top:6px;}
+
+/* APP */
+#app{display:none;min-height:100vh;}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:224px;background:var(--bg2);border-right:0.5px solid var(--border);display:flex;flex-direction:column;z-index:10;}
+.sidebar-brand{padding:20px 20px 16px;border-bottom:0.5px solid var(--border);}
+.sidebar-brand-name{font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.1em;text-transform:uppercase;}
+.sidebar-empresa{font-size:11px;color:var(--text3);margin-top:2px;}
+.sidebar-user{padding:14px 20px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:10px;}
+.user-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;flex-shrink:0;}
+.user-info p:first-child{font-size:13px;font-weight:500;}
+.user-info p:last-child{font-size:11px;color:var(--text3);}
+.sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto;}
+.nav-section{font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;padding:0 10px;margin:12px 0 6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:13px;color:var(--text2);cursor:pointer;transition:all .15s;margin-bottom:2px;}
+.nav-item:hover{background:var(--bg3);color:var(--text);}
+.nav-item.active{background:rgba(79,127,255,0.12);color:var(--accent);}
+.nav-icon{width:16px;height:16px;opacity:.7;flex-shrink:0;}
+.nav-item.active .nav-icon{opacity:1;}
+.sidebar-footer{padding:14px 20px;border-top:0.5px solid var(--border);}
+.logout-btn{font-size:12px;color:var(--text3);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.logout-btn:hover{color:var(--red);}
+
+/* MAIN */
+.main{margin-left:224px;min-height:100vh;}
+.topbar{padding:18px 32px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--bg);}
+.topbar-title{font-size:18px;font-weight:600;}
+.topbar-sub{font-size:13px;color:var(--text3);margin-top:2px;}
+.topbar-actions{display:flex;gap:8px;}
+.content{padding:28px 32px;}
+
+/* COMPONENTS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
+.stat-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:18px 20px;}
+.stat-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.stat-value{font-size:28px;font-weight:600;line-height:1;margin-bottom:4px;}
+.stat-detail{font-size:12px;color:var(--text2);}
+.stat-green{color:var(--green);}.stat-amber{color:var(--amber);}.stat-red{color:var(--red);}.stat-blue{color:var(--accent);}
+.progress-bar{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin-top:8px;}
+.progress-fill{height:100%;border-radius:2px;transition:width .4s;}
+.filter-row{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-select{background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;cursor:pointer;}
+.search-input{background:var(--bg2);border:0.5px solid var(--border2);border-radius:8px;padding:7px 14px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;flex:1;min-width:200px;}
+.search-input:focus,.filter-select:focus{border-color:var(--accent);}
+.table-wrap{background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;overflow:hidden;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{padding:11px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;border-bottom:0.5px solid var(--border);background:var(--bg3);}
+tbody tr{border-bottom:0.5px solid var(--border);transition:background .1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--bg3);}
+tbody td{padding:11px 16px;color:var(--text2);vertical-align:middle;}
+tbody td:first-child{color:var(--text);font-weight:500;}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;}
+.badge-green{background:rgba(52,211,153,0.12);color:var(--green);}
+.badge-amber{background:rgba(251,191,36,0.12);color:var(--amber);}
+.badge-red{background:rgba(248,113,113,0.12);color:var(--red);}
+.badge-blue{background:rgba(79,127,255,0.12);color:var(--accent);}
+.badge-gray{background:rgba(139,141,158,0.12);color:var(--text2);}
+.badge-purple{background:rgba(167,139,250,0.12);color:var(--purple);}
+.link-btn{font-size:12px;color:var(--accent);text-decoration:none;font-weight:500;padding:3px 8px;border-radius:6px;border:0.5px solid rgba(79,127,255,0.3);transition:background .15s;}
+.link-btn:hover{background:rgba(79,127,255,0.1);}
+.empty-state{text-align:center;padding:48px;color:var(--text3);font-size:14px;}
+.loading{text-align:center;padding:48px;color:var(--text3);font-size:13px;}
+.action-btn{padding:7px 14px;border-radius:8px;border:0.5px solid var(--border2);background:var(--bg3);color:var(--text);font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.action-btn:hover{background:var(--bg2);border-color:var(--accent);color:var(--accent);}
+.action-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.action-btn.primary:hover{background:var(--accent2);}
+.action-btn.danger{border-color:rgba(248,113,113,0.3);color:var(--red);}
+.action-btn.danger:hover{background:rgba(248,113,113,0.1);}
+
+/* FORM */
+.form-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:16px;padding:28px 32px;max-width:640px;}
+.form-title{font-size:16px;font-weight:600;margin-bottom:6px;}
+.form-sub{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.5;}
+.form-group{margin-bottom:18px;}
+.form-group label{font-size:12px;color:var(--text2);font-weight:500;display:block;margin-bottom:7px;}
+.form-group select,.form-group textarea,.form-group input[type=text],.form-group input[type=email],.form-group input[type=password]{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;padding:11px 14px;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s;}
+.form-group select:focus,.form-group textarea:focus,.form-group input:focus{border-color:var(--accent);}
+.form-group textarea{resize:vertical;min-height:100px;line-height:1.5;}
+.toggle-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg3);border-radius:10px;border:0.5px solid var(--border2);}
+.toggle-row label{font-size:13px;color:var(--text);flex:1;cursor:pointer;}
+.toggle-row span{font-size:12px;color:var(--text3);}
+.toggle-input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer;}
+.form-alert{padding:14px 16px;border-radius:10px;font-size:13px;margin-bottom:18px;display:none;}
+.form-alert.success{background:rgba(52,211,153,0.1);border:0.5px solid rgba(52,211,153,0.3);color:var(--green);}
+.form-alert.error{background:rgba(248,113,113,0.1);border:0.5px solid rgba(248,113,113,0.3);color:var(--red);}
+.anon-note{margin-top:16px;padding:12px 14px;background:rgba(79,127,255,0.07);border:0.5px solid rgba(79,127,255,0.2);border-radius:10px;font-size:12px;color:var(--text2);line-height:1.6;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.active{display:flex;}
+.modal-box{background:var(--bg2);border:0.5px solid var(--border2);border-radius:18px;padding:32px;width:90%;max-width:580px;max-height:90vh;overflow-y:auto;}
+.modal-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;}
+.modal-id{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-bottom:4px;}
+.modal-title{font-size:17px;font-weight:600;}
+.modal-close{background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:6px 12px;color:var(--text2);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;flex-shrink:0;}
+.modal-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.modal-meta-item{background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 14px;}
+.modal-meta-label{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.modal-meta-value{font-size:13px;color:var(--text);}
+.modal-section-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+.modal-text-box{background:var(--bg3);border:0.5px solid var(--border);border-radius:10px;padding:16px;font-size:14px;color:var(--text);line-height:1.7;white-space:pre-wrap;margin-bottom:16px;}
+.modal-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:0.5px solid var(--border);}
+.estado-select{background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;}
+.estado-select:focus{border-color:var(--accent);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="auth-screen active" id="screen-login">
+  <div class="auth-card">
+    <div class="auth-logo">Compliance Portal</div>
+    <div class="auth-title">Iniciar sesión</div>
+    <div class="auth-sub">Accede con tu email y contraseña corporativa</div>
+    <div class="auth-alert error" id="login-error"></div>
+    <div class="input-group"><label>Email</label><input type="email" id="login-email" placeholder="usuario@empresa.com"></div>
+    <div class="input-group"><label>Contraseña</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="auth-btn" id="login-btn" onclick="doLogin()">Ingresar</button>
+    <div class="auth-switch">¿No tienes cuenta? <a onclick="showScreen('screen-register')">Regístrate aquí</a></div>
+  </div>
+</div>
+
+<!-- REGISTRO -->
+<div class="auth-screen" id="screen-register">
+  <div class="auth-card">
+    <div class="auth-logo">Compliance Portal</div>
+    <div class="auth-title">Crear cuenta</div>
+    <div class="auth-sub">Ingresa el código de empresa que te proporcionó tu empleador</div>
+    <div class="auth-alert error" id="reg-error"></div>
+    <div class="auth-alert success" id="reg-success"></div>
+    <div class="input-group"><label>Nombre completo</label><input type="text" id="reg-nombre" placeholder="Juan Pérez"></div>
+    <div class="input-group"><label>Email</label><input type="email" id="reg-email" placeholder="juan@empresa.com"></div>
+    <div class="input-group"><label>Contraseña</label><input type="password" id="reg-pass" placeholder="Mínimo 8 caracteres"></div>
+    <div class="input-group">
+      <label>Código de empresa</label>
+      <input type="text" id="reg-codigo" placeholder="Ej: COMPLIANCE2024" style="text-transform:uppercase">
+      <div class="codigo-hint">Tu empleador te proporcionó este código</div>
+    </div>
+    <button class="auth-btn" id="reg-btn" onclick="doRegistro()">Crear cuenta</button>
+    <div class="auth-switch">¿Ya tienes cuenta? <a onclick="showScreen('screen-login')">Inicia sesión</a></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand-name">Compliance</div>
+      <div class="sidebar-empresa" id="sidebar-empresa">Portal</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div class="user-info"><p id="user-name">Usuario</p><p id="user-role-label">—</p></div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer"><button class="logout-btn" onclick="doLogout()">Cerrar sesión</button></div>
+  </aside>
+  <main class="main">
+    <div class="topbar">
+      <div><div class="topbar-title" id="topbar-title">Dashboard</div><div class="topbar-sub" id="topbar-sub"></div></div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content" id="main-content"></div>
+  </main>
+</div>
+
+<!-- MODAL DENUNCIA -->
+<div class="modal-overlay" id="den-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-id" id="modal-id"></div><div class="modal-title" id="modal-tipo"></div></div>
+      <button class="modal-close" onclick="closeModal()">Cerrar</button>
+    </div>
+    <div class="modal-meta" id="modal-meta"></div>
+    <div class="modal-section-label">Descripción</div>
+    <div class="modal-text-box" id="modal-desc"></div>
+    <div id="modal-resolucion-wrap" style="display:none">
+      <div class="modal-section-label">Resolución</div>
+      <div class="modal-text-box" id="modal-resolucion-text"></div>
+    </div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL='https://script.google.com/macros/s/AKfycbxdxGO62_wNLOt8OzXg_-UhDcXFvZO5kwvnSDL3_Z9L8P1xpVV5wLrJRq4zNXl-mwMx/exec';
+
+const MENUS={
+  oficial:   ['dashboard','politicas','denuncias','capacitaciones','incidentes','terceros','usuarios'],
+  empleado:  ['politicas','capacitaciones','nueva-denuncia'],
+  directorio:['dashboard'],
+};
+
+const NAV_ITEMS={
+  dashboard:      {label:'Dashboard',             icon:'M3 3h7v7H3zm11 0h7v7h-7zM3 14h7v7H3zm11 3h2v2h-2zm4 0h2v2h-2zm-4 4h2v2h-2zm4 0h2v2h-2z'},
+  politicas:      {label:'Políticas',             icon:'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'},
+  denuncias:      {label:'Canal de denuncias',    icon:'M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z'},
+  'nueva-denuncia':{label:'Registrar denuncia',   icon:'M12 4v16m8-8H4'},
+  capacitaciones: {label:'Capacitaciones',        icon:'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'},
+  incidentes:     {label:'Incidentes',            icon:'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z'},
+  terceros:       {label:'Due diligence',         icon:'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0'},
+  usuarios:       {label:'Usuarios',              icon:'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197'},
+};
+
+let currentUser=null, currentView=null, sheetData={}, appConfig={};
+
+// ── SCREENS ──
+function showScreen(id){
+  document.querySelectorAll('.auth-screen').forEach(s=>s.classList.remove('active'));
+  const s=document.getElementById(id);
+  if(s)s.classList.add('active');
+}
+
+// ── LOGIN ──
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
+  const pass=document.getElementById('login-pass').value;
+  const errEl=document.getElementById('login-error');
+  const btn=document.getElementById('login-btn');
+  errEl.style.display='none';
+  if(!email||!pass){errEl.textContent='Completa todos los campos.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Verificando...';
+  try{
+    const r=await fetch(`${SCRIPT_URL}?action=login&email=${encodeURIComponent(email)}&password=${encodeURIComponent(pass)}`);
+    const j=await r.json();
+    if(j.status==='ok'){
+      currentUser=j.user;
+      document.querySelectorAll('.auth-screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById('app').style.display='block';
+      initApp();
+    }else{
+      errEl.textContent=j.message||'Credenciales incorrectas.';
+      errEl.style.display='block';
+    }
+  }catch(e){
+    errEl.textContent='Error de conexión. Intenta nuevamente.';
+    errEl.style.display='block';
+  }finally{btn.disabled=false;btn.textContent='Ingresar';}
+}
+
+// ── REGISTRO ──
+async function doRegistro(){
+  const nombre=document.getElementById('reg-nombre').value.trim();
+  const email=document.getElementById('reg-email').value.trim().toLowerCase();
+  const pass=document.getElementById('reg-pass').value;
+  const codigo=document.getElementById('reg-codigo').value.trim().toUpperCase();
+  const errEl=document.getElementById('reg-error');
+  const sucEl=document.getElementById('reg-success');
+  const btn=document.getElementById('reg-btn');
+  errEl.style.display='none';sucEl.style.display='none';
+  if(!nombre||!email||!pass||!codigo){errEl.textContent='Completa todos los campos.';errEl.style.display='block';return;}
+  if(pass.length<8){errEl.textContent='La contraseña debe tener al menos 8 caracteres.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Registrando...';
+  try{
+    await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'registro',nombre,email,password:pass,codigo})});
+    sucEl.textContent='Cuenta creada correctamente. Ahora puedes iniciar sesión.';
+    sucEl.style.display='block';
+    setTimeout(()=>showScreen('screen-login'),2000);
+  }catch(e){
+    errEl.textContent='Error al registrar. Intenta nuevamente.';
+    errEl.style.display='block';
+  }finally{btn.disabled=false;btn.textContent='Crear cuenta';}
+}
+
+function doLogout(){
+  currentUser=null;sheetData={};appConfig={};
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-pass').value='';
+  showScreen('screen-login');
+}
+
+// ── INIT ──
+function initApp(){
+  const initials=currentUser.nombre.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+  document.getElementById('user-avatar').textContent=initials;
+  document.getElementById('user-name').textContent=currentUser.nombre;
+  document.getElementById('user-role-label').textContent=roleLabel(currentUser.rol);
+  buildNav();
+  navigateTo(MENUS[currentUser.rol][0]);
+  loadData();
+}
+
+function roleLabel(r){return{oficial:'Oficial de Compliance',empleado:'Empleado',directorio:'Alta Gerencia'}[r]||r;}
+
+function buildNav(){
+  const nav=document.getElementById('sidebar-nav');
+  nav.innerHTML='';
+  const sec=document.createElement('div');
+  sec.className='nav-section';sec.textContent='Módulos';nav.appendChild(sec);
+  (MENUS[currentUser.rol]||[]).forEach(id=>{
+    const item=NAV_ITEMS[id];if(!item)return;
+    const el=document.createElement('div');
+    el.className='nav-item';el.id='nav-'+id;
+    el.innerHTML=`<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="${item.icon}" stroke-linecap="round" stroke-linejoin="round"/></svg>${item.label}`;
+    el.onclick=()=>navigateTo(id);
+    nav.appendChild(el);
+  });
+}
+
+// ── DATA ──
+async function loadData(){
+  try{
+    const r=await fetch(SCRIPT_URL);
+    const j=await r.json();
+    if(j.status==='ok'){
+      sheetData=j.data||{};
+      appConfig=j.config||{};
+      document.getElementById('sidebar-empresa').textContent=appConfig['nombre_empresa']||'Portal';
+    }
+  }catch(e){console.error('Error cargando datos:',e);}
+  renderView(currentView);
+}
+
+// ── NAV ──
+function navigateTo(view){
+  currentView=view;
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  const ni=document.getElementById('nav-'+view);
+  if(ni)ni.classList.add('active');
+  document.getElementById('topbar-title').textContent=NAV_ITEMS[view]?.label||view;
+  document.getElementById('topbar-sub').textContent='';
+  document.getElementById('topbar-actions').innerHTML='';
+  document.getElementById('main-content').innerHTML='<div class="loading">Cargando...</div>';
+  renderView(view);
+}
+
+function renderView(v){
+  if(!v)return;
+  if(v==='dashboard')renderDashboard();
+  else if(v==='politicas')renderPoliticas();
+  else if(v==='denuncias')renderDenuncias();
+  else if(v==='nueva-denuncia')renderNuevaDenuncia();
+  else if(v==='capacitaciones')renderCapacitaciones();
+  else if(v==='incidentes')renderIncidentes();
+  else if(v==='terceros')renderTerceros();
+  else if(v==='usuarios')renderUsuarios();
+}
+
+// ── HELPERS ──
+function badge(text){
+  if(!text||text==='—')return'<span class="badge badge-gray">—</span>';
+  const t=text.toLowerCase();
+  if(['vigente','aprobado','completado','sí','si','cerrada','cerrado'].some(x=>t.includes(x)))return`<span class="badge badge-green">${text}</span>`;
+  if(['en revisión','en investigación','en proceso','pendiente'].some(x=>t.includes(x)))return`<span class="badge badge-amber">${text}</span>`;
+  if(['vencida','rechazado','no','abierto','alta'].some(x=>t.includes(x)))return`<span class="badge badge-red">${text}</span>`;
+  if(['recibida','obligatoria'].some(x=>t.includes(x)))return`<span class="badge badge-blue">${text}</span>`;
+  if(['medio'].some(x=>t.includes(x)))return`<span class="badge badge-purple">${text}</span>`;
+  return`<span class="badge badge-gray">${text}</span>`;
+}
+function linkBtn(url){return url&&url.startsWith('http')?`<a href="${url}" target="_blank" class="link-btn">Ver</a>`:'<span style="color:var(--text3);font-size:12px">—</span>';}
+function today(){const n=new Date();return`${String(n.getDate()).padStart(2,'0')}/${String(n.getMonth()+1).padStart(2,'0')}/${n.getFullYear()}`;}
+
+// ── DASHBOARD ──
+function renderDashboard(){
+  const pol=sheetData['1. Políticas y documentos']||[];
+  const den=sheetData['2. Canal de denuncias']||[];
+  const cap=sheetData['3. Capacitaciones']||[];
+  const inc=sheetData['4. Registro de incidentes']||[];
+  const ter=sheetData['5. Due diligence terceros']||[];
+  const vigentes=pol.filter(r=>r['Estado']==='Vigente').length;
+  const abiertas=den.filter(r=>['Recibida','En investigación'].includes(r['Estado'])).length;
+  const completados=cap.length?Math.round(cap.filter(r=>r['Completado']==='Sí').length/cap.length*100):0;
+  const abiertosInc=inc.filter(r=>['Abierto','En proceso'].includes(r['Estado'])).length;
+
+  // PDF button for directorio/oficial
+  document.getElementById('topbar-actions').innerHTML=`<button class="action-btn primary" onclick="exportPDF()">Exportar reporte PDF</button>`;
+
+  document.getElementById('main-content').innerHTML=`
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Políticas vigentes</div><div class="stat-value stat-green">${vigentes}</div><div class="stat-detail">de ${pol.length} totales</div><div class="progress-bar"><div class="progress-fill" style="width:${pol.length?vigentes/pol.length*100:0}%;background:var(--green)"></div></div></div>
+      <div class="stat-card"><div class="stat-label">Denuncias abiertas</div><div class="stat-value ${abiertas>0?'stat-amber':'stat-green'}">${abiertas}</div><div class="stat-detail">${den.length} totales recibidas</div><div class="progress-bar"><div class="progress-fill" style="width:${den.length?abiertas/den.length*100:0}%;background:var(--amber)"></div></div></div>
+      <div class="stat-card"><div class="stat-label">Capacitaciones</div><div class="stat-value stat-blue">${completados}%</div><div class="stat-detail">${cap.filter(r=>r['Completado']==='Sí').length} de ${cap.length} completadas</div><div class="progress-bar"><div class="progress-fill" style="width:${completados}%;background:var(--accent)"></div></div></div>
+      <div class="stat-card"><div class="stat-label">Incidentes activos</div><div class="stat-value ${abiertosInc>0?'stat-red':'stat-green'}">${abiertosInc}</div><div class="stat-detail">${inc.length} totales registrados</div><div class="progress-bar"><div class="progress-fill" style="width:${inc.length?abiertosInc/inc.length*100:0}%;background:var(--red)"></div></div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div class="table-wrap"><div style="padding:14px 16px;border-bottom:0.5px solid var(--border);font-size:13px;font-weight:600">Políticas recientes</div>
+      <table><thead><tr><th>Nombre</th><th>Estado</th><th>Vence</th></tr></thead>
+      <tbody>${pol.slice(0,5).map(r=>`<tr><td>${r['Nombre']||'—'}</td><td>${badge(r['Estado'])}</td><td style="font-size:12px;color:var(--text3)">${r['Fecha_vencimiento']||'—'}</td></tr>`).join('')||'<tr><td colspan="3" class="empty-state">Sin datos</td></tr>'}</tbody></table></div>
+      <div class="table-wrap"><div style="padding:14px 16px;border-bottom:0.5px solid var(--border);font-size:13px;font-weight:600">Denuncias recientes</div>
+      <table><thead><tr><th>ID</th><th>Tipo</th><th>Estado</th></tr></thead>
+      <tbody>${den.slice(0,5).map(r=>`<tr><td style="font-family:'DM Mono',monospace;font-size:11px">${r['ID_denuncia']||'—'}</td><td>${r['Tipo']||'—'}</td><td>${badge(r['Estado'])}</td></tr>`).join('')||'<tr><td colspan="3" class="empty-state">Sin denuncias</td></tr>'}</tbody></table></div>
+    </div>`;
+}
+
+// ── POLÍTICAS ──
+function renderPoliticas(){
+  document.getElementById('topbar-actions').innerHTML=`<button class="action-btn" onclick="loadData();renderView('politicas')">Actualizar</button>`;
+  const data=sheetData['1. Políticas y documentos']||[];
+  const cats=[...new Set(data.map(r=>r['Categoría']).filter(Boolean))];
+  document.getElementById('main-content').innerHTML=`
+    <div class="filter-row">
+      <input class="search-input" id="pol-search" placeholder="Buscar política..." oninput="filterTable('pol')">
+      <select class="filter-select" id="pol-cat" onchange="filterTable('pol')"><option value="">Todas las categorías</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select>
+      <select class="filter-select" id="pol-est" onchange="filterTable('pol')"><option value="">Todos los estados</option><option>Vigente</option><option>En revisión</option><option>Vencida</option></select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Tipo</th><th>Estado</th><th>Versión</th><th>Vence</th><th>Doc</th></tr></thead>
+    <tbody id="pol-body">${renderPolRows(data)}</tbody></table></div>`;
+}
+function renderPolRows(d){
+  if(!d.length)return'<tr><td colspan="8" class="empty-state">Sin registros</td></tr>';
+  return d.map(r=>`<tr><td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_politica']||'—'}</td><td>${r['Nombre']||'—'}</td><td>${badge(r['Categoría'])}</td><td>${r['Tipo']||'—'}</td><td>${badge(r['Estado'])}</td><td style="font-family:'DM Mono',monospace;font-size:12px">${r['Versión']||'—'}</td><td style="font-size:12px;color:var(--text3)">${r['Fecha_vencimiento']||'—'}</td><td>${linkBtn(r['Enlace_documento'])}</td></tr>`).join('');
+}
+
+// ── DENUNCIAS ──
+function renderDenuncias(){
+  const data=sheetData['2. Canal de denuncias']||[];
+  const tipos=[...new Set(data.map(r=>r['Tipo']).filter(Boolean))];
+  document.getElementById('main-content').innerHTML=`
+    <div class="filter-row">
+      <input class="search-input" id="den-search" placeholder="Buscar..." oninput="filterTable('den')">
+      <select class="filter-select" id="den-tipo" onchange="filterTable('den')"><option value="">Todos los tipos</option>${tipos.map(c=>`<option>${c}</option>`).join('')}</select>
+      <select class="filter-select" id="den-est" onchange="filterTable('den')"><option value="">Todos los estados</option><option>Recibida</option><option>En investigación</option><option>Cerrada</option><option>Desestimada</option></select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Área</th><th>Anónimo</th><th>Estado</th><th>Investigador</th><th></th></tr></thead>
+    <tbody id="den-body">${renderDenRows(data)}</tbody></table></div>`;
+}
+function renderDenRows(data){
+  if(!data.length)return'<tr><td colspan="8" class="empty-state">Sin registros</td></tr>';
+  const all=sheetData['2. Canal de denuncias']||[];
+  return data.map(r=>{
+    const idx=all.findIndex(x=>x['ID_denuncia']===r['ID_denuncia']);
+    return`<tr style="cursor:pointer" onclick="openDenuncia(${idx})">
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_denuncia']||'—'}</td>
+      <td style="font-size:12px">${r['Fecha_recepción']||'—'}</td>
+      <td>${badge(r['Tipo'])}</td><td>${r['Área_involucrada']||'—'}</td>
+      <td>${badge(r['Es_anónimo'])}</td><td>${badge(r['Estado'])}</td>
+      <td style="font-size:12px">${r['Investigador']||'—'}</td>
+      <td style="color:var(--accent);font-size:12px">Ver →</td></tr>`;
+  }).join('');
+}
+
+function openDenuncia(idx){
+  const data=sheetData['2. Canal de denuncias']||[];
+  const r=data[idx];if(!r)return;
+  document.getElementById('modal-id').textContent=r['ID_denuncia']||'—';
+  document.getElementById('modal-tipo').textContent=r['Tipo']||'Sin tipo';
+  document.getElementById('modal-desc').textContent=r['Descripción']||'Sin descripción.';
+  const meta=[
+    {label:'Fecha',value:r['Fecha_recepción']||'—'},
+    {label:'Área',value:r['Área_involucrada']||'—'},
+    {label:'Anónimo',value:r['Es_anónimo']||'—'},
+    {label:'Estado',value:r['Estado']||'—'},
+    {label:'Investigador',value:r['Investigador']||'—'},
+    {label:'Fecha cierre',value:r['Fecha_cierre']||'—'},
+  ];
+  document.getElementById('modal-meta').innerHTML=meta.map(m=>`<div class="modal-meta-item"><div class="modal-meta-label">${m.label}</div><div class="modal-meta-value">${m.value}</div></div>`).join('');
+  const res=r['Resolución']||'';
+  const resWrap=document.getElementById('modal-resolucion-wrap');
+  if(res){document.getElementById('modal-resolucion-text').textContent=res;resWrap.style.display='block';}
+  else{resWrap.style.display='none';}
+
+  // Acciones para el oficial
+  const actionsEl=document.getElementById('modal-actions');
+  if(currentUser.rol==='oficial'){
+    actionsEl.innerHTML=`
+      <select class="estado-select" id="modal-estado-sel">
+        <option value="Recibida" ${r['Estado']==='Recibida'?'selected':''}>Recibida</option>
+        <option value="En investigación" ${r['Estado']==='En investigación'?'selected':''}>En investigación</option>
+        <option value="Cerrada" ${r['Estado']==='Cerrada'?'selected':''}>Cerrada</option>
+        <option value="Desestimada" ${r['Estado']==='Desestimada'?'selected':''}>Desestimada</option>
+      </select>
+      <input type="text" id="modal-investigador" placeholder="Investigador asignado" value="${r['Investigador']||''}" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;flex:1;">
+      <button class="action-btn primary" onclick="guardarEstadoDenuncia('${r['ID_denuncia']}',${idx})">Guardar cambios</button>`;
+  }else{actionsEl.innerHTML='';}
+
+  document.getElementById('den-modal').classList.add('active');
+}
+
+async function guardarEstadoDenuncia(id, idx){
+  const estado=document.getElementById('modal-estado-sel').value;
+  const investigador=document.getElementById('modal-investigador').value;
+  try{
+    await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'actualizar_denuncia',id,estado,investigador})});
+    // Actualizar localmente
+    const data=sheetData['2. Canal de denuncias']||[];
+    if(data[idx]){data[idx]['Estado']=estado;data[idx]['Investigador']=investigador;}
+    closeModal();
+    renderDenuncias();
+  }catch(e){alert('Error al guardar. Intenta nuevamente.');}
+}
+
+function closeModal(){document.getElementById('den-modal').classList.remove('active');}
+
+// ── NUEVA DENUNCIA ──
+function renderNuevaDenuncia(){
+  document.getElementById('main-content').innerHTML=`
+    <div class="form-card">
+      <div class="form-title">Registrar una denuncia</div>
+      <div class="form-sub">Tu reporte será recibido directamente por el Oficial de Compliance. Puedes hacerlo de forma anónima.</div>
+      <div class="form-alert success" id="den-success"></div>
+      <div class="form-alert error" id="den-form-error"></div>
+      <div class="form-group"><label>Tipo de situación</label>
+        <select id="den-tipo-f"><option value="">Selecciona...</option><option>Corrupción</option><option>Acoso</option><option>Fraude</option><option>Conflicto de interés</option><option>LAFT</option><option>Otro</option></select>
+      </div>
+      <div class="form-group"><label>Área involucrada</label><input type="text" id="den-area-f" placeholder="Ej: Finanzas, Compras..."></div>
+      <div class="form-group"><label>Descripción de los hechos</label><textarea id="den-desc-f" placeholder="Describe los hechos con el mayor detalle posible..."></textarea></div>
+      <div class="form-group"><div class="toggle-row"><input type="checkbox" class="toggle-input" id="den-anon-f" checked><label for="den-anon-f">Enviar de forma anónima</label><span>Tu identidad no se registrará</span></div></div>
+      <div class="anon-note">Todas las denuncias son tratadas con absoluta confidencialidad. Solo el Oficial de Compliance tiene acceso.</div>
+      <br>
+      <button class="action-btn primary" id="den-submit-btn" onclick="submitDenuncia()" style="padding:11px 28px;font-size:14px;">Enviar denuncia</button>
+    </div>`;
+}
+
+async function submitDenuncia(){
+  const tipo=document.getElementById('den-tipo-f').value;
+  const area=document.getElementById('den-area-f').value.trim();
+  const desc=document.getElementById('den-desc-f').value.trim();
+  const anon=document.getElementById('den-anon-f').checked;
+  const sucEl=document.getElementById('den-success');
+  const errEl=document.getElementById('den-form-error');
+  const btn=document.getElementById('den-submit-btn');
+  sucEl.style.display='none';errEl.style.display='none';
+  if(!tipo||!desc){errEl.textContent='Completa el tipo y la descripción.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Enviando...';
+  try{
+    await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'nueva_denuncia',fecha:today(),tipo,area:area||'No especificada',descripcion:desc,anonimo:anon?'Sí':'No'})});
+    sucEl.textContent='Tu denuncia fue registrada. El Oficial de Compliance la revisará a la brevedad.';
+    sucEl.style.display='block';
+    document.getElementById('den-tipo-f').value='';
+    document.getElementById('den-area-f').value='';
+    document.getElementById('den-desc-f').value='';
+    document.getElementById('den-anon-f').checked=true;
+  }catch(e){errEl.textContent='Error de conexión. Intenta nuevamente.';errEl.style.display='block';}
+  finally{btn.disabled=false;btn.textContent='Enviar denuncia';}
+}
+
+// ── CAPACITACIONES ──
+function renderCapacitaciones(){
+  const data=sheetData['3. Capacitaciones']||[];
+  document.getElementById('main-content').innerHTML=`
+    <div class="filter-row">
+      <input class="search-input" id="cap-search" placeholder="Buscar..." oninput="filterTable('cap')">
+      <select class="filter-select" id="cap-est" onchange="filterTable('cap')"><option value="">Todos</option><option>Sí</option><option>No</option><option>Pendiente</option></select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>Empleado</th><th>Área</th><th>Capacitación</th><th>Tipo</th><th>Completado</th><th>Puntaje</th><th>Aprobado</th><th>Certificado</th></tr></thead>
+    <tbody id="cap-body">${renderCapRows(data)}</tbody></table></div>`;
+}
+function renderCapRows(d){
+  if(!d.length)return'<tr><td colspan="8" class="empty-state">Sin registros</td></tr>';
+  return d.map(r=>`<tr><td>${r['Empleado']||'—'}</td><td style="font-size:12px">${r['Área']||'—'}</td><td>${r['Capacitación']||'—'}</td><td>${badge(r['Tipo'])}</td><td>${badge(r['Completado'])}</td><td style="font-family:'DM Mono',monospace;font-size:12px">${r['Puntaje']||'—'}</td><td>${badge(r['Aprobado'])}</td><td>${linkBtn(r['Certificado_link'])}</td></tr>`).join('');
+}
+
+// ── INCIDENTES ──
+function renderIncidentes(){
+  const data=sheetData['4. Registro de incidentes']||[];
+  document.getElementById('main-content').innerHTML=`
+    <div class="filter-row">
+      <input class="search-input" id="inc-search" placeholder="Buscar..." oninput="filterTable('inc')">
+      <select class="filter-select" id="inc-sev" onchange="filterTable('inc')"><option value="">Todas las severidades</option><option>Alta</option><option>Media</option><option>Baja</option></select>
+      <select class="filter-select" id="inc-est" onchange="filterTable('inc')"><option value="">Todos los estados</option><option>Abierto</option><option>En proceso</option><option>Cerrado</option></select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Severidad</th><th>Área</th><th>Estado</th></tr></thead>
+    <tbody id="inc-body">${renderIncRows(data)}</tbody></table></div>`;
+}
+function renderIncRows(d){
+  if(!d.length)return'<tr><td colspan="7" class="empty-state">Sin registros</td></tr>';
+  return d.map(r=>`<tr><td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_incidente']||'—'}</td><td style="font-size:12px">${r['Fecha_identificación']||'—'}</td><td>${badge(r['Tipo'])}</td><td style="font-size:12px;max-width:180px">${(r['Descripción']||'—').substring(0,55)}${(r['Descripción']||'').length>55?'...':''}</td><td>${badge(r['Severidad'])}</td><td>${r['Área']||'—'}</td><td>${badge(r['Estado'])}</td></tr>`).join('');
+}
+
+// ── TERCEROS ──
+function renderTerceros(){
+  const data=sheetData['5. Due diligence terceros']||[];
+  document.getElementById('main-content').innerHTML=`
+    <div class="filter-row">
+      <input class="search-input" id="ter-search" placeholder="Buscar proveedor..." oninput="filterTable('ter')">
+      <select class="filter-select" id="ter-riesgo" onchange="filterTable('ter')"><option value="">Todos los riesgos</option><option>Alto</option><option>Medio</option><option>Bajo</option></select>
+      <select class="filter-select" id="ter-est" onchange="filterTable('ter')"><option value="">Todos los estados</option><option>Aprobado</option><option>En revisión</option><option>Pendiente</option><option>Rechazado</option></select>
+    </div>
+    <div class="table-wrap"><table><thead><tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>País</th><th>Riesgo</th><th>Estado</th><th>Próx. revisión</th><th>Docs</th></tr></thead>
+    <tbody id="ter-body">${renderTerRows(data)}</tbody></table></div>`;
+}
+function renderTerRows(d){
+  if(!d.length)return'<tr><td colspan="8" class="empty-state">Sin registros</td></tr>';
+  return d.map(r=>`<tr><td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_tercero']||'—'}</td><td>${r['Nombre']||'—'}</td><td>${r['Tipo']||'—'}</td><td style="font-size:12px">${r['País']||'—'}</td><td>${badge(r['Nivel_riesgo'])}</td><td>${badge(r['Estado_evaluación'])}</td><td style="font-size:12px;color:var(--text3)">${r['Próxima_revisión']||'—'}</td><td>${linkBtn(r['Documentos_link'])}</td></tr>`).join('');
+}
+
+// ── USUARIOS ──
+function renderUsuarios(){
+  document.getElementById('main-content').innerHTML=`
+    <div style="margin-bottom:16px;padding:14px 16px;background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;font-size:13px;color:var(--text2);">
+      Código de empresa activo: <span style="font-family:'DM Mono',monospace;color:var(--accent);font-size:13px">${appConfig['codigo_empresa']||'—'}</span> — Compártelo con los empleados para que puedan registrarse.
+    </div>
+    <div class="table-wrap" id="usuarios-wrap"><div class="loading">Cargando usuarios...</div></div>`;
+  loadUsuarios();
+}
+
+async function loadUsuarios(){
+  try{
+    const r=await fetch(`${SCRIPT_URL}?action=usuarios`);
+    // El script actual no tiene endpoint de usuarios — mostramos mensaje
+    document.getElementById('usuarios-wrap').innerHTML=`<div class="empty-state" style="padding:32px">Los usuarios registrados aparecen aquí. Gestiónalos directamente en la hoja "6. Usuarios" de tu Google Sheet.</div>`;
+  }catch(e){
+    document.getElementById('usuarios-wrap').innerHTML=`<div class="empty-state">Gestiona los usuarios directamente en la hoja "6. Usuarios" de Google Sheets.</div>`;
+  }
+}
+
+// ── FILTROS ──
+function filterTable(mod){
+  const maps={
+    pol:{search:'pol-search',body:'pol-body',data:'1. Políticas y documentos',render:renderPolRows,filters:[{id:'pol-cat',field:'Categoría'},{id:'pol-est',field:'Estado'}]},
+    den:{search:'den-search',body:'den-body',data:'2. Canal de denuncias',render:renderDenRows,filters:[{id:'den-tipo',field:'Tipo'},{id:'den-est',field:'Estado'}]},
+    cap:{search:'cap-search',body:'cap-body',data:'3. Capacitaciones',render:renderCapRows,filters:[{id:'cap-est',field:'Completado'}]},
+    inc:{search:'inc-search',body:'inc-body',data:'4. Registro de incidentes',render:renderIncRows,filters:[{id:'inc-sev',field:'Severidad'},{id:'inc-est',field:'Estado'}]},
+    ter:{search:'ter-search',body:'ter-body',data:'5. Due diligence terceros',render:renderTerRows,filters:[{id:'ter-riesgo',field:'Nivel_riesgo'},{id:'ter-est',field:'Estado_evaluación'}]},
+  };
+  const m=maps[mod];if(!m)return;
+  let data=[...(sheetData[m.data]||[])];
+  const q=document.getElementById(m.search)?.value.toLowerCase()||'';
+  if(q)data=data.filter(r=>Object.values(r).some(v=>String(v).toLowerCase().includes(q)));
+  m.filters.forEach(f=>{const v=document.getElementById(f.id)?.value||'';if(v)data=data.filter(r=>r[f.field]===v);});
+  const body=document.getElementById(m.body);
+  if(body)body.innerHTML=m.render(data);
+}
+
+// ── PDF EXPORT ──
+function exportPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const empresa=appConfig['nombre_empresa']||'Empresa';
+  const pol=sheetData['1. Políticas y documentos']||[];
+  const den=sheetData['2. Canal de denuncias']||[];
+  const cap=sheetData['3. Capacitaciones']||[];
+  const inc=sheetData['4. Registro de incidentes']||[];
+  const ter=sheetData['5. Due diligence terceros']||[];
+
+  let y=20;
+  const line=()=>{doc.setDrawColor(200);doc.line(15,y,195,y);y+=6;};
+  const title=(t,size=14)=>{doc.setFontSize(size);doc.setFont('helvetica','bold');doc.text(t,15,y);y+=size/2+4;};
+  const sub=(t)=>{doc.setFontSize(10);doc.setFont('helvetica','normal');doc.setTextColor(100);doc.text(t,15,y);y+=6;doc.setTextColor(0);};
+  const kv=(k,v)=>{doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text(k+': ',15,y);doc.setFont('helvetica','normal');doc.text(String(v),15+doc.getTextWidth(k+': '),y);y+=6;};
+  const checkPage=()=>{if(y>270){doc.addPage();y=20;}};
+
+  // Header
+  doc.setFillColor(15,32,128);doc.rect(0,0,210,22,'F');
+  doc.setFontSize(14);doc.setFont('helvetica','bold');doc.setTextColor(255);
+  doc.text('Reporte del Programa de Compliance',15,14);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text(empresa+' — '+today(),15,20);
+  doc.setTextColor(0);y=34;
+
+  // Resumen ejecutivo
+  title('Resumen Ejecutivo',13);line();
+  kv('Políticas vigentes',pol.filter(r=>r['Estado']==='Vigente').length+' de '+pol.length);checkPage();
+  kv('Denuncias abiertas',den.filter(r=>['Recibida','En investigación'].includes(r['Estado'])).length);checkPage();
+  kv('Completación de capacitaciones',cap.length?Math.round(cap.filter(r=>r['Completado']==='Sí').length/cap.length*100)+'%':'—');checkPage();
+  kv('Incidentes activos',inc.filter(r=>['Abierto','En proceso'].includes(r['Estado'])).length);checkPage();
+  kv('Terceros de alto riesgo',ter.filter(r=>r['Nivel_riesgo']==='Alto').length);checkPage();
+  y+=4;
+
+  // Políticas
+  checkPage();title('Políticas y Documentos',12);line();
+  pol.slice(0,10).forEach(r=>{
+    checkPage();
+    sub((r['ID_politica']||'—')+' — '+(r['Nombre']||'—')+' ['+( r['Estado']||'—')+'] Vence: '+(r['Fecha_vencimiento']||'—'));
+  });y+=4;
+
+  // Denuncias
+  checkPage();title('Canal de Denuncias',12);line();
+  if(!den.length){sub('Sin denuncias registradas.');}
+  den.slice(0,10).forEach(r=>{
+    checkPage();
+    sub((r['ID_denuncia']||'—')+' — '+(r['Tipo']||'—')+' — Área: '+(r['Área_involucrada']||'—')+' ['+( r['Estado']||'—')+']');
+  });y+=4;
+
+  // Incidentes
+  checkPage();title('Incidentes',12);line();
+  if(!inc.length){sub('Sin incidentes registrados.');}
+  inc.slice(0,10).forEach(r=>{
+    checkPage();
+    sub((r['ID_incidente']||'—')+' — '+(r['Tipo']||'—')+' — Severidad: '+(r['Severidad']||'—')+' ['+( r['Estado']||'—')+']');
+  });y+=4;
+
+  // Footer
+  doc.setFontSize(8);doc.setTextColor(150);
+  doc.text('Generado el '+today()+' — Portal Compliance — '+empresa,15,285);
+
+  doc.save('Reporte_Compliance_'+today().replace(/\//g,'-')+'.pdf');
+}
+</script>
+</body>
+</html>
