@@ -348,6 +348,10 @@ tbody td.muted{color:var(--text2);font-weight:400;}
     <div class="modal-meta" id="modal-meta"></div>
     <div class="modal-section-label">Descripción del hecho</div>
     <div class="modal-text-box" id="modal-desc"></div>
+    <div id="modal-adjunto-wrap" style="display:none;margin-bottom:16px">
+      <div class="modal-section-label">Evidencia adjunta</div>
+      <img id="modal-adjunto-img" style="max-width:100%;max-height:300px;border-radius:12px;border:0.5px solid var(--border2);object-fit:contain">
+    </div>
     <div id="modal-resolucion-wrap" style="display:none">
       <div class="modal-section-label">Resolución</div>
       <div class="modal-text-box" id="modal-resolucion-text"></div>
@@ -520,8 +524,8 @@ function renderDashboard(){
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div class="section-card"><div class="section-card-header"><span class="section-card-title">Políticas recientes <span class="section-card-badge">${pol.length}</span></span></div>
-      <table><thead><tr><th>Nombre</th><th>Estado</th><th>Vence</th></tr></thead>
-      <tbody>${pol.slice(0,6).map(r=>`<tr><td>${r['Nombre']||'—'}</td><td>${badge(r['Estado'])}</td><td class="muted" style="font-size:12px">${r['Fecha_vencimiento']||'—'}</td></tr>`).join('')||'<tr><td colspan="3" class="empty-state">Sin datos</td></tr>'}</tbody></table></div>
+      <table><thead><tr><th>Nombre</th><th>Categoría</th><th>Vence</th></tr></thead>
+      <tbody>${pol.slice(0,6).map(r=>`<tr><td>${r['Nombre']||'—'}</td><td>${badge(r['Categoría'])}</td><td class="muted" style="font-size:12px">${r['Fecha_vencimiento']||'—'}</td></tr>`).join('')||'<tr><td colspan="3" class="empty-state">Sin datos</td></tr>'}</tbody></table></div>
       <div class="section-card"><div class="section-card-header"><span class="section-card-title">Denuncias recientes <span class="section-card-badge">${den.length}</span></span></div>
       <table><thead><tr><th>ID</th><th>Tipo</th><th>Estado</th></tr></thead>
       <tbody>${den.slice(0,6).map(r=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_denuncia']||'—'}</td><td>${r['Tipo']||'—'}</td><td>${badge(r['Estado'])}</td></tr>`).join('')||'<tr><td colspan="3" class="empty-state">Sin denuncias</td></tr>'}</tbody></table></div>
@@ -535,13 +539,13 @@ function renderPoliticas(){
     <div class="filter-row">
       <input class="search-input" id="pol-s" placeholder="Buscar política..." oninput="ft('pol')">
       <select class="filter-select" id="pol-c" onchange="ft('pol')"><option value="">Todas las categorías</option>${cats.map(c=>`<option>${c}</option>`).join('')}</select>
-      <select class="filter-select" id="pol-e" onchange="ft('pol')"><option value="">Todos los estados</option><option>Vigente</option><option>En revisión</option><option>Vencida</option></select>
+
     </div>
-    <div class="section-card"><table><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Tipo</th><th>Estado</th><th>Versión</th><th>Vence</th><th>Doc</th></tr></thead>
+    <div class="section-card"><table><thead><tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Tipo</th><th>Responsable</th><th>Doc</th></tr></thead>
     <tbody id="pol-body">${rPolRows(data)}</tbody></table></div>`;
 }
-function rPolRows(d){if(!d.length)return'<tr><td colspan="8" class="empty-state">Sin registros</td></tr>';
-  return d.map(r=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_politica']||'—'}</td><td>${r['Nombre']||'—'}</td><td>${badge(r['Categoría'])}</td><td class="muted">${r['Tipo']||'—'}</td><td>${badge(r['Estado'])}</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2)">${r['Versión']||'—'}</td><td class="muted" style="font-size:12px">${r['Fecha_vencimiento']||'—'}</td><td>${lnk(r['Enlace_documento'])}</td></tr>`).join('');}
+function rPolRows(d){if(!d.length)return'<tr><td colspan="6" class="empty-state">Sin registros</td></tr>';
+  return d.map(r=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_politica']||'—'}</td><td>${r['Nombre']||'—'}</td><td>${badge(r['Categoría'])}</td><td class="muted">${r['Tipo']||'—'}</td><td class="muted" style="font-size:12px">${r['Responsable']||'—'}</td><td>${lnk(r['Enlace_documento'])}</td></tr>`).join('');}
 
 function renderDenuncias(){
   const data=sheetData['2. Canal de denuncias']||[];
@@ -552,13 +556,14 @@ function renderDenuncias(){
       <select class="filter-select" id="den-t" onchange="ft('den')"><option value="">Todos los tipos</option>${tipos.map(c=>`<option>${c}</option>`).join('')}</select>
       <select class="filter-select" id="den-e" onchange="ft('den')"><option value="">Todos los estados</option><option>Recibida</option><option>En investigación</option><option>Cerrada</option><option>Desestimada</option></select>
     </div>
-    <div class="section-card"><table><thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Área</th><th>Anónimo</th><th>Estado</th><th>Investigador</th><th></th></tr></thead>
+    <div class="section-card"><table><thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Área</th><th>Denunciante</th><th>Estado</th><th>Investigador</th><th></th></tr></thead>
     <tbody id="den-body">${rDenRows(data)}</tbody></table></div>`;
 }
-function rDenRows(data){if(!data.length)return'<tr><td colspan="8" class="empty-state">Sin registros</td></tr>';
+function rDenRows(data){if(!data.length)return'<tr><td colspan="6" class="empty-state">Sin registros</td></tr>';
   const all=sheetData['2. Canal de denuncias']||[];
   return data.map(r=>{const idx=all.findIndex(x=>x['ID_denuncia']===r['ID_denuncia']);
-    return`<tr style="cursor:pointer" onclick="openDen(${idx})"><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_denuncia']||'—'}</td><td class="muted" style="font-size:12px">${r['Fecha_recepción']||'—'}</td><td>${badge(r['Tipo'])}</td><td>${r['Área_involucrada']||'—'}</td><td>${badge(r['Es_anónimo'])}</td><td>${badge(r['Estado'])}</td><td class="muted" style="font-size:12px">${r['Investigador']||'—'}</td><td style="color:var(--red3);font-size:12px;font-weight:700">Ver →</td></tr>`;
+    const denunciante = r['Denunciante']||r['Es_anónimo']==='Sí'?'<span class="badge badge-gray">Anónimo</span>':'<span style="font-size:12px">'+r['Denunciante']+'</span>';
+    return`<tr style="cursor:pointer" onclick="openDen(${idx})"><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_denuncia']||'—'}</td><td class="muted" style="font-size:12px">${r['Fecha_recepción']||'—'}</td><td>${badge(r['Tipo'])}</td><td>${r['Área_involucrada']||'—'}</td><td>${denunciante}</td><td>${badge(r['Estado'])}</td><td class="muted" style="font-size:12px">${r['Investigador']||'—'}</td><td style="color:var(--red3);font-size:12px;font-weight:700">Ver →</td></tr>`;
   }).join('');}
 
 function openDen(idx){
@@ -566,7 +571,17 @@ function openDen(idx){
   document.getElementById('modal-id').textContent=r['ID_denuncia']||'—';
   document.getElementById('modal-tipo').textContent=r['Tipo']||'Sin tipo';
   document.getElementById('modal-desc').textContent=r['Descripción']||'Sin descripción.';
-  const meta=[{l:'Fecha',v:r['Fecha_recepción']||'—'},{l:'Área',v:r['Área_involucrada']||'—'},{l:'Anónimo',v:r['Es_anónimo']||'—'},{l:'Estado',v:r['Estado']||'—'},{l:'Investigador',v:r['Investigador']||'—'},{l:'Cierre',v:r['Fecha_cierre']||'—'}];
+  // Show adjunto image if present
+  const adjWrap = document.getElementById('modal-adjunto-wrap');
+  const adjImg  = document.getElementById('modal-adjunto-img');
+  const adjunto = r['Adjunto']||'';
+  if(adjunto && adjunto.startsWith('data:image')){
+    adjImg.src = adjunto;
+    adjWrap.style.display = 'block';
+  } else {
+    adjWrap.style.display = 'none';
+  }
+  const denuncianteVal=r['Es_anónimo']==='Sí'?'Anónimo':(r['Denunciante']||r['Es_anónimo']||'—');const meta=[{l:'Fecha',v:r['Fecha_recepción']||'—'},{l:'Área',v:r['Área_involucrada']||'—'},{l:'Denunciante',v:denuncianteVal},{l:'Estado',v:r['Estado']||'—'},{l:'Investigador',v:r['Investigador']||'—'},{l:'Cierre',v:r['Fecha_cierre']||'—'}];
   document.getElementById('modal-meta').innerHTML=meta.map(m=>`<div class="modal-meta-item"><div class="modal-meta-label">${m.l}</div><div class="modal-meta-value">${m.v}</div></div>`).join('');
   const res=r['Resolución']||'';
   const rw=document.getElementById('modal-resolucion-wrap');
@@ -592,28 +607,135 @@ function renderNuevaDenuncia(){
   document.getElementById('main-content').innerHTML=`
     <div class="form-card">
       <div class="form-title">Registrar una denuncia</div>
-      <div class="form-sub">Tu reporte será recibido directamente por el Oficial de Compliance de Avícola Sofía. Puedes enviarlo de manera completamente anónima.</div>
+      <div class="form-sub">Tu reporte será recibido directamente por el Oficial de Compliance de Avícola Sofía. Puedes elegir si enviarlo de forma anónima o identificada.</div>
       <div class="form-alert success" id="ds"></div>
       <div class="form-alert error" id="de"></div>
+
       <div class="form-group"><label>Tipo de situación</label>
         <select id="dt"><option value="">Selecciona una categoría...</option><option>Corrupción</option><option>Acoso</option><option>Fraude</option><option>Conflicto de interés</option><option>LAFT</option><option>Incumplimiento de normas</option><option>Otro</option></select>
       </div>
       <div class="form-group"><label>Área involucrada</label><input type="text" id="da" placeholder="Ej: Producción, Logística, Administración..."></div>
       <div class="form-group"><label>Descripción detallada</label><textarea id="dd" placeholder="Describe los hechos con el mayor detalle posible. Incluye fechas, personas involucradas y evidencias si las tienes..."></textarea></div>
-      <div class="form-group"><div class="toggle-row"><input type="checkbox" class="toggle-input" id="dan" checked><label for="dan">Enviar de forma anónima</label><span>Tu identidad no se registrará</span></div></div>
-      <div class="anon-note">Todas las denuncias son tratadas con absoluta confidencialidad. Solo el Oficial de Compliance tiene acceso a esta información. El sistema garantiza el anonimato cuando así lo solicitas.</div>
-      <br><button class="btn btn-primary" id="dsb" onclick="submitDen()" style="padding:13px 28px;font-size:14px;">Enviar denuncia</button>
+
+      <div class="form-group">
+        <label>Tipo de envío</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px">
+          <div id="opt-anon" onclick="setAnonimo(true)" style="cursor:pointer;padding:14px 16px;border-radius:12px;border:1.5px solid var(--red);background:var(--redglow);transition:all .15s">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <div style="width:16px;height:16px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M5 13l4 4L19 7"/></svg>
+              </div>
+              <span style="font-size:13px;font-weight:700;color:var(--text)">Anónimo</span>
+            </div>
+            <p style="font-size:12px;color:var(--text2);margin:0;line-height:1.5">Tu nombre <strong>no quedará registrado</strong>. Solo el Oficial de Compliance verá el contenido.</p>
+          </div>
+          <div id="opt-ident" onclick="setAnonimo(false)" style="cursor:pointer;padding:14px 16px;border-radius:12px;border:1.5px solid var(--border2);background:var(--bg3);transition:all .15s">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <div style="width:16px;height:16px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0"></div>
+              <span style="font-size:13px;font-weight:700;color:var(--text)">Identificado</span>
+            </div>
+            <p style="font-size:12px;color:var(--text2);margin:0;line-height:1.5">Tu nombre <strong>quedará registrado</strong>. Puede facilitar el seguimiento de la denuncia.</p>
+          </div>
+        </div>
+        <div id="nombre-display" style="display:none;margin-top:10px;padding:11px 14px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;font-size:13px;color:var(--text2)">
+          Se registrará como: <strong style="color:var(--text)">${currentUser.nombre}</strong>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Prueba o evidencia <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(opcional — solo imágenes)</span></label>
+        <div id="drop-zone" onclick="document.getElementById('file-input').click()" style="border:1.5px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg3)">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--text3);margin-bottom:8px"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div style="font-size:13px;color:var(--text2);font-weight:500">Haz clic para adjuntar una imagen</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">JPG, PNG o GIF — máx. 1MB</div>
+        </div>
+        <input type="file" id="file-input" accept="image/*" style="display:none" onchange="previewImage(this)">
+        <div id="img-preview" style="display:none;margin-top:10px;position:relative">
+          <img id="preview-img" style="max-width:100%;max-height:200px;border-radius:10px;border:0.5px solid var(--border2);object-fit:contain">
+          <button onclick="clearImage()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.6);border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;line-height:1">✕</button>
+          <div id="img-size-warn" style="display:none;margin-top:6px;font-size:12px;color:var(--red3)">La imagen supera 1MB. Por favor elige una más pequeña.</div>
+        </div>
+      </div>
+
+      <div style="padding:12px 16px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:10px;font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:20px">
+        Independientemente del tipo de envío, todas las denuncias son tratadas con absoluta confidencialidad. Solo el Oficial de Compliance tiene acceso a esta información.
+      </div>
+
+      <button class="btn btn-primary" id="dsb" onclick="submitDen()" style="padding:13px 28px;font-size:14px;">Enviar denuncia</button>
     </div>`;
+  window._esAnonimo = true;
+  window._adjuntoB64 = null;
+}
+
+function previewImage(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 1048576){
+    document.getElementById('img-size-warn').style.display='block';
+    document.getElementById('preview-img').style.display='none';
+    window._adjuntoB64 = null;
+    return;
+  }
+  document.getElementById('img-size-warn').style.display='none';
+  const reader = new FileReader();
+  reader.onload = e => {
+    window._adjuntoB64 = e.target.result;
+    document.getElementById('preview-img').src = e.target.result;
+    document.getElementById('img-preview').style.display='block';
+    document.getElementById('drop-zone').style.borderColor='var(--red)';
+    document.getElementById('drop-zone').style.background='var(--redglow)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImage(){
+  window._adjuntoB64 = null;
+  document.getElementById('file-input').value='';
+  document.getElementById('img-preview').style.display='none';
+  document.getElementById('drop-zone').style.borderColor='var(--border2)';
+  document.getElementById('drop-zone').style.background='var(--bg3)';
+}
+
+function setAnonimo(val){
+  window._esAnonimo = val;
+  const optAnon  = document.getElementById('opt-anon');
+  const optIdent = document.getElementById('opt-ident');
+  const nombreDisplay = document.getElementById('nombre-display');
+  if(val){
+    optAnon.style.border  = '1.5px solid var(--red)';
+    optAnon.style.background = 'var(--redglow)';
+    optAnon.querySelector('div').style.background = 'var(--red)';
+    optAnon.querySelector('div').innerHTML = '<svg width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M5 13l4 4L19 7"/></svg>';
+    optIdent.style.border = '1.5px solid var(--border2)';
+    optIdent.style.background = 'var(--bg3)';
+    optIdent.querySelector('div').style.background = 'transparent';
+    optIdent.querySelector('div').style.border = '1.5px solid var(--border2)';
+    optIdent.querySelector('div').innerHTML = '';
+    nombreDisplay.style.display = 'none';
+  } else {
+    optIdent.style.border = '1.5px solid var(--red)';
+    optIdent.style.background = 'var(--redglow)';
+    optIdent.querySelector('div').style.background = 'var(--red)';
+    optIdent.querySelector('div').style.border = 'none';
+    optIdent.querySelector('div').innerHTML = '<svg width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M5 13l4 4L19 7"/></svg>';
+    optAnon.style.border  = '1.5px solid var(--border2)';
+    optAnon.style.background = 'var(--bg3)';
+    optAnon.querySelector('div').style.background = 'transparent';
+    optAnon.querySelector('div').style.border = '1.5px solid var(--border2)';
+    optAnon.querySelector('div').innerHTML = '';
+    nombreDisplay.style.display = 'block';
+  }
 }
 async function submitDen(){
-  const tipo=document.getElementById('dt').value,area=document.getElementById('da').value.trim(),desc=document.getElementById('dd').value.trim(),anon=document.getElementById('dan').checked;
+  const tipo=document.getElementById('dt').value,area=document.getElementById('da').value.trim(),desc=document.getElementById('dd').value.trim(),anon=window._esAnonimo!==false;
   const suc=document.getElementById('ds'),err=document.getElementById('de'),btn=document.getElementById('dsb');
   suc.style.display='none';err.style.display='none';
   if(!tipo||!desc){err.textContent='Completa el tipo y la descripción.';err.style.display='block';return;}
   btn.disabled=true;btn.textContent='Enviando...';
-  try{await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'nueva_denuncia',fecha:today(),tipo,area:area||'No especificada',descripcion:desc,anonimo:anon?'Sí':'No'})});
+  try{await fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',body:JSON.stringify({action:'nueva_denuncia',fecha:today(),tipo,area:area||'No especificada',descripcion:desc,anonimo:anon?'Sí':'No',denunciante:anon?'Anónimo':currentUser.nombre,adjunto:window._adjuntoB64||''})});
   suc.textContent='Tu denuncia fue registrada correctamente. El Oficial de Compliance la revisará a la brevedad.';suc.style.display='block';
-  document.getElementById('dt').value='';document.getElementById('da').value='';document.getElementById('dd').value='';document.getElementById('dan').checked=true;
+  document.getElementById('dt').value='';document.getElementById('da').value='';document.getElementById('dd').value='';
+  clearImage();setAnonimo(true);
   }catch(e){err.textContent='Error de conexión.';err.style.display='block';}
   finally{btn.disabled=false;btn.textContent='Enviar denuncia';}
 }
@@ -626,7 +748,7 @@ function renderCapacitaciones(){
     <div class="section-card"><table><thead><tr><th>Empleado</th><th>Área</th><th>Capacitación</th><th>Tipo</th><th>Completado</th><th>Puntaje</th><th>Aprobado</th><th>Certificado</th></tr></thead>
     <tbody id="cap-body">${rCapRows(data)}</tbody></table></div>`;
 }
-function rCapRows(d){if(!d.length)return'<tr><td colspan="8" class="empty-state">Sin registros</td></tr>';
+function rCapRows(d){if(!d.length)return'<tr><td colspan="6" class="empty-state">Sin registros</td></tr>';
   return d.map(r=>`<tr><td>${r['Empleado']||'—'}</td><td class="muted" style="font-size:12px">${r['Área']||'—'}</td><td>${r['Capacitación']||'—'}</td><td>${badge(r['Tipo'])}</td><td>${badge(r['Completado'])}</td><td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2)">${r['Puntaje']||'—'}</td><td>${badge(r['Aprobado'])}</td><td>${lnk(r['Certificado_link'])}</td></tr>`).join('');}
 
 function renderIncidentes(){
@@ -638,7 +760,7 @@ function renderIncidentes(){
     <div class="section-card"><table><thead><tr><th>ID</th><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Severidad</th><th>Área</th><th>Estado</th></tr></thead>
     <tbody id="inc-body">${rIncRows(data)}</tbody></table></div>`;
 }
-function rIncRows(d){if(!d.length)return'<tr><td colspan="7" class="empty-state">Sin registros</td></tr>';
+function rIncRows(d){if(!d.length)return'<tr><td colspan="6" class="empty-state">Sin registros</td></tr>';
   return d.map(r=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_incidente']||'—'}</td><td class="muted" style="font-size:12px">${r['Fecha_identificación']||'—'}</td><td>${badge(r['Tipo'])}</td><td class="muted" style="font-size:12px;max-width:180px">${(r['Descripción']||'—').substring(0,55)}${(r['Descripción']||'').length>55?'...':''}</td><td>${badge(r['Severidad'])}</td><td>${r['Área']||'—'}</td><td>${badge(r['Estado'])}</td></tr>`).join('');}
 
 function renderTerceros(){
@@ -650,7 +772,7 @@ function renderTerceros(){
     <div class="section-card"><table><thead><tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>País</th><th>Riesgo</th><th>Estado</th><th>Próx. revisión</th><th>Docs</th></tr></thead>
     <tbody id="ter-body">${rTerRows(data)}</tbody></table></div>`;
 }
-function rTerRows(d){if(!d.length)return'<tr><td colspan="8" class="empty-state">Sin registros</td></tr>';
+function rTerRows(d){if(!d.length)return'<tr><td colspan="6" class="empty-state">Sin registros</td></tr>';
   return d.map(r=>`<tr><td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text3)">${r['ID_tercero']||'—'}</td><td>${r['Nombre']||'—'}</td><td class="muted">${r['Tipo']||'—'}</td><td class="muted" style="font-size:12px">${r['País']||'—'}</td><td>${badge(r['Nivel_riesgo'])}</td><td>${badge(r['Estado_evaluación'])}</td><td class="muted" style="font-size:12px">${r['Próxima_revisión']||'—'}</td><td>${lnk(r['Documentos_link'])}</td></tr>`).join('');}
 
 function renderUsuarios(){
@@ -785,7 +907,7 @@ async function toggleActivo(email, nuevoEstado){
 
 function ft(mod){
   const m={
-    pol:{s:'pol-s',b:'pol-body',d:'1. Políticas y documentos',r:rPolRows,f:[{i:'pol-c',k:'Categoría'},{i:'pol-e',k:'Estado'}]},
+    pol:{s:'pol-s',b:'pol-body',d:'1. Políticas y documentos',r:rPolRows,f:[{i:'pol-c',k:'Categoría'}]},
     den:{s:'den-s',b:'den-body',d:'2. Canal de denuncias',r:rDenRows,f:[{i:'den-t',k:'Tipo'},{i:'den-e',k:'Estado'}]},
     cap:{s:'cap-s',b:'cap-body',d:'3. Capacitaciones',r:rCapRows,f:[{i:'cap-e',k:'Completado'}]},
     inc:{s:'inc-s',b:'inc-body',d:'4. Registro de incidentes',r:rIncRows,f:[{i:'inc-sv',k:'Severidad'},{i:'inc-e',k:'Estado'}]},
@@ -1028,18 +1150,16 @@ function exportPDF(){
   if (!pol.length) { note('Sin registros de políticas.'); }
   else {
     statRow([
-      { l: 'Total', v: pol.length },
-      { l: 'Vigentes', v: pol.filter(r => r['Estado'] === 'Vigente').length },
-      { l: 'En revisión', v: pol.filter(r => r['Estado'] === 'En revisión').length },
-      { l: 'Vencidas', v: pol.filter(r => r['Estado'] === 'Vencida').length },
+      { l: 'Total políticas', v: pol.length },
+      { l: 'Categorías', v: [...new Set(pol.map(r=>r['Categoría']).filter(Boolean))].length },
+      { l: 'Con documento', v: pol.filter(r=>r['Enlace_documento']&&r['Enlace_documento'].startsWith('http')).length },
     ]);
-    tHead([{ l:'ID',w:18},{ l:'Nombre del documento',w:74},{ l:'Categoría',w:30},{ l:'Estado',w:26},{ l:'Vencimiento',w:26}]);
+    tHead([{ l:'ID',w:18},{ l:'Nombre del documento',w:96},{ l:'Categoría',w:38},{ l:'Tipo',w:36}]);
     pol.forEach((r,i) => tRow([
-      { k:'ID_politica',      w:18, max:9,  muted:true },
-      { k:'Nombre',           w:74, max:40 },
-      { k:'Categoría',        w:30, max:16, muted:true },
-      { k:'Estado',           w:26, max:14 },
-      { k:'Fecha_vencimiento',w:26, max:12, muted:true },
+      { k:'ID_politica', w:18, max:9,  muted:true },
+      { k:'Nombre',      w:96, max:50 },
+      { k:'Categoría',   w:38, max:20, muted:true },
+      { k:'Tipo',        w:36, max:18, muted:true },
     ], r, i));
   }
   y += 6;
@@ -1058,12 +1178,12 @@ function exportPDF(){
     ]);
     tHead([{ l:'ID',w:24},{ l:'Fecha',w:22},{ l:'Tipo',w:38},{ l:'Área',w:36},{ l:'Anónimo',w:18},{ l:'Estado',w:36}]);
     den.forEach((r,i) => tRow([
-      { k:'ID_denuncia',     w:24, max:12, muted:true },
-      { k:'Fecha_recepción', w:22, max:11, muted:true },
-      { k:'Tipo',            w:38, max:20 },
+      { k:'ID_denuncia',     w:22, max:11, muted:true },
+      { k:'Fecha_recepción', w:20, max:11, muted:true },
+      { k:'Tipo',            w:36, max:18 },
       { k:'Área_involucrada',w:36, max:18, muted:true },
-      { k:'Es_anónimo',      w:18, max:5  },
-      { k:'Estado',          w:36, max:18 },
+      { k:'Denunciante',     w:28, max:14 },
+      { k:'Estado',          w:30, max:15 },
     ], r, i));
   }
   y += 6;
@@ -1350,7 +1470,7 @@ function exportModulePDF(module, label){
     if(!data.length){note('No se han registrado denuncias en el período.');}
     else{
       statRow(kpis);
-      tHead([{l:'ID',w:24},{l:'Fecha',w:22},{l:'Tipo',w:38},{l:'Área',w:36},{l:'Anónimo',w:18},{l:'Estado',w:36}]);
+      tHead([{l:'ID',w:22},{l:'Fecha',w:20},{l:'Tipo',w:36},{l:'Área',w:36},{l:'Denunciante',w:28},{l:'Estado',w:30}]);
       data.forEach((r,i)=>tRow([
         {k:'ID_denuncia',     w:24,max:12,muted:true},
         {k:'Fecha_recepción', w:22,max:11,muted:true},
